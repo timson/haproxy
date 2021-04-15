@@ -149,7 +149,7 @@ struct pool_head *create_pool(char *name, unsigned int size, unsigned int flags)
 /* Evicts some of the oldest objects from the local cache, pushing them to the
  * global pool.
  */
-void pool_evict_from_cache()
+void pool_evict_from_local_cache()
 {
 	struct pool_cache_item *item;
 	struct pool_cache_head *ph;

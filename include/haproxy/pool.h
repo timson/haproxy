@@ -80,7 +80,7 @@ extern struct pool_cache_head pool_cache[][MAX_BASE_POOLS];
 extern THREAD_LOCAL size_t pool_cache_bytes;   /* total cache size */
 extern THREAD_LOCAL size_t pool_cache_count;   /* #cache objects   */
 
-void pool_evict_from_cache();
+void pool_evict_from_local_cache();
 
 /* returns the pool index for pool <pool>, or -1 if this pool has no index */
 static inline ssize_t pool_get_index(const struct pool_head *pool)
@@ -96,7 +96,7 @@ static inline ssize_t pool_get_index(const struct pool_head *pool)
 /* Tries to retrieve an object from the local pool cache corresponding to pool
  * <pool>. Returns NULL if none is available.
  */
-static inline void *__pool_get_from_cache(struct pool_head *pool)
+static inline void *pool_get_from_local_cache(struct pool_head *pool)
 {
 	ssize_t idx = pool_get_index(pool);
 	struct pool_cache_item *item;
@@ -126,7 +126,7 @@ static inline void *__pool_get_from_cache(struct pool_head *pool)
 /* Frees an object to the local cache, possibly pushing oldest objects to the
  * global pool.
  */
-static inline void pool_put_to_cache(struct pool_head *pool, void *ptr, ssize_t idx)
+static inline void pool_put_to_local_cache(struct pool_head *pool, void *ptr, ssize_t idx)
 {
 	struct pool_cache_item *item = (struct pool_cache_item *)ptr;
 	struct pool_cache_head *ph = &pool_cache[tid][idx];
@@ -138,7 +138,7 @@ static inline void pool_put_to_cache(struct pool_head *pool, void *ptr, ssize_t 
 	pool_cache_bytes += ph->size;
 
 	if (unlikely(pool_cache_bytes > CONFIG_HAP_POOL_CACHE_SIZE))
-		pool_evict_from_cache(pool, ptr, idx);
+		pool_evict_from_local_cache(pool, ptr, idx);
 }
 
 #else // CONFIG_HAP_POOLS
@@ -300,7 +300,7 @@ static inline void *__pool_alloc(struct pool_head *pool, unsigned int flags)
 	void *p;
 
 #ifdef CONFIG_HAP_POOLS
-	if (likely(p = __pool_get_from_cache(pool)))
+	if (likely(p = pool_get_from_local_cache(pool)))
 		goto ret;
 #endif
 
@@ -366,7 +366,7 @@ static inline void pool_free(struct pool_head *pool, void *ptr)
 		if (idx >= 0 &&
 		    (pool_cache_bytes <= CONFIG_HAP_POOL_CACHE_SIZE * 3 / 4 ||
 		     pool_cache[tid][idx].count < 16 + pool_cache_count / 8)) {
-			pool_put_to_cache(pool, ptr, idx);
+			pool_put_to_local_cache(pool, ptr, idx);
 			return;
 		}
 #endif
