@@ -27,7 +27,7 @@
 #include <haproxy/tools.h>
 
 
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 /* These are the most common pools, expected to be initialized first. These
  * ones are allocated from an array, allowing to map them to an index.
  */
@@ -103,7 +103,7 @@ struct pool_head *create_pool(char *name, unsigned int size, unsigned int flags)
 	}
 
 	if (!pool) {
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 		if (pool_base_count < MAX_BASE_POOLS)
 			pool = &pool_base_start[pool_base_count++];
 
@@ -129,7 +129,7 @@ struct pool_head *create_pool(char *name, unsigned int size, unsigned int flags)
 		pool->flags = flags;
 		LIST_ADDQ(start, &pool->list);
 
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 		/* update per-thread pool cache if necessary */
 		idx = pool_get_index(pool);
 		if (idx >= 0) {
@@ -145,7 +145,7 @@ struct pool_head *create_pool(char *name, unsigned int size, unsigned int flags)
 	return pool;
 }
 
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 /* Evicts some of the oldest objects from the local cache, pushing them to the
  * global pool.
  */
@@ -507,7 +507,7 @@ void *pool_destroy(struct pool_head *pool)
 			HA_SPIN_DESTROY(&pool->lock);
 #endif
 
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 			if ((pool - pool_base_start) < MAX_BASE_POOLS)
 				memset(pool, 0, sizeof(*pool));
 			else
@@ -631,7 +631,7 @@ void create_pool_callback(struct pool_head **ptr, char *name, unsigned int size)
 /* Initializes all per-thread arrays on startup */
 static void init_pools()
 {
-#ifdef CONFIG_HAP_LOCAL_POOLS
+#ifdef CONFIG_HAP_POOLS
 	int thr, idx;
 
 	for (thr = 0; thr < MAX_THREADS; thr++) {
