@@ -1550,6 +1550,7 @@ int ssl_sock_bind_verifycbk(int ok, X509_STORE_CTX *x_store)
 	depth = X509_STORE_CTX_get_error_depth(x_store);
 	err = X509_STORE_CTX_get_error(x_store);
 
+
 	/* check if CA error needs to be ignored */
 	if (depth > 0) {
 		if (!SSL_SOCK_ST_TO_CA_ERROR(ctx->xprt_st)) {
@@ -1563,6 +1564,7 @@ int ssl_sock_bind_verifycbk(int ok, X509_STORE_CTX *x_store)
 			return 1;
 		}
 
+		send_log(NULL, LOG_WARNING, "haproxy: X509_STORE_CTX_get_error %d\n", err);
 		conn->err_code = CO_ER_SSL_CA_FAIL;
 		return 0;
 	}
@@ -1577,6 +1579,7 @@ int ssl_sock_bind_verifycbk(int ok, X509_STORE_CTX *x_store)
 		return 1;
 	}
 
+	send_log(NULL, LOG_WARNING, "haproxy: X509_STORE_CTX_get_error %d\n", err);
 	conn->err_code = CO_ER_SSL_CRT_FAIL;
 	return 0;
 }
